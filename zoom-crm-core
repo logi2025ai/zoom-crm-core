@@ -1,75 +1,68 @@
 #!/bin/bash
 
-# ======================================
-#  Zoom Bot Module - Revolution AI CRM
-#  Integración completa con Zoom API
-#  Por: Ashley AI (2025)
-# ======================================
+# ===========================
+# Zoom CLI - RNAI Core
+# ===========================
 
-# Claves de autenticación Zoom
 ACCOUNT_ID="H747iWXbTU24W54HOma5_A"
 CLIENT_ID="oINj9oydR0CDHc2wU1JQGg"
-CLIENT_SECRET="xT5zLwh3ly11ok3KPGIlHY5V2gdxpEu7"
+CLIENT_SECRET="xT5zLwh3ly11ok3KPGIIHY5V2gdxpEu7"
 
-token=""
+get_token() {
+  echo "[🔐] Obteniendo token de acceso..."
+  RESPONSE=$(curl -s --request POST \
+    --url https://zoom.us/oauth/token?grant_type=account_credentials&account_id=$ACCOUNT_ID \
+    --header "Authorization: Basic $(echo -n $CLIENT_ID:$CLIENT_SECRET | base64)")
 
-# Funciones =============================
-function auth_zoom() {
-  echo "[+] Autenticando con Zoom API..."
-  response=$(curl -s -X POST https://zoom.us/oauth/token \
-    -u "$CLIENT_ID:$CLIENT_SECRET" \
-    -d "grant_type=account_credentials&account_id=$ACCOUNT_ID")
+  ACCESS_TOKEN=$(echo $RESPONSE | grep -o '"access_token":"[^"]*' | cut -d':' -f2 | tr -d '"')
 
-  token=$(echo $response | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
-
-  if [ -n "$token" ]; then
-    echo "[✓] Token obtenido correctamente."
+  if [[ -z "$ACCESS_TOKEN" ]]; then
+    echo "[❌] Error obteniendo token."
   else
-    echo "[x] Error autenticando con Zoom API."
+    echo "[✅] Token obtenido correctamente."
+    echo "$ACCESS_TOKEN"
   fi
 }
 
-function create_meeting() {
-  echo "[+] Creando reunión en Zoom..."
-  curl -s -X POST https://api.zoom.us/v2/users/me/meetings \
-    -H "Authorization: Bearer $token" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "topic": "Reunión IA Revolution",
+create_meeting() {
+  echo "[📞] Creando nueva reunión..."
+  TOKEN=$(get_token)
+
+  curl -s --request POST \
+    --url https://api.zoom.us/v2/users/me/meetings \
+    --header "Authorization: Bearer $TOKEN" \
+    --header "Content-Type: application/json" \
+    --data '{
+      "topic": "Reunión RNAI Bot",
       "type": 1,
       "settings": {
-        "join_before_host": true,
-        "approval_type": 0
+        "host_video": true,
+        "participant_video": true
       }
     }' | jq
 }
 
-function list_meetings() {
-  echo "[+] Consultando reuniones..."
-  curl -s -X GET https://api.zoom.us/v2/users/me/meetings \
-    -H "Authorization: Bearer $token" | jq
+list_meetings() {
+  echo "[📋] Listando reuniones..."
+  TOKEN=$(get_token)
+
+  curl -s --request GET \
+    --url https://api.zoom.us/v2/users/me/meetings \
+    --header "Authorization: Bearer $TOKEN" | jq
 }
 
-function help() {
-  echo "\nZoomBot CLI - Comandos disponibles"
-  echo "- auth      → Autenticar con Zoom"
-  echo "- new       → Crear nueva reunión"
-  echo "- list      → Ver reuniones existentes"
-  echo "- help      → Mostrar esta ayuda"
+help() {
+  echo "Comandos disponibles Zoom CLI:"
+  echo "  token         → Obtener token de acceso"
+  echo "  new           → Crear una nueva reunión"
+  echo "  list          → Listar reuniones programadas"
+  echo "  help          → Mostrar esta ayuda"
 }
 
-# Lógica principal ======================
-case $1 in
-  auth)
-    auth_zoom
-    ;;
-  new)
-    auth_zoom && create_meeting
-    ;;
-  list)
-    auth_zoom && list_meetings
-    ;;
-  help | *)
-    help
-    ;;
+case "$1" in
+  token) get_token ;;
+  new) create_meeting ;;
+  list) list_meetings ;;
+  help|*) help ;;
 esac
+
