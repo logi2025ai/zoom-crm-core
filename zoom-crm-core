@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# ======================================
+#  Zoom Bot Module - Revolution AI CRM
+#  Integración completa con Zoom API
+#  Por: Ashley AI (2025)
+# ======================================
+
+# Claves de autenticación Zoom
+ACCOUNT_ID="H747iWXbTU24W54HOma5_A"
+CLIENT_ID="oINj9oydR0CDHc2wU1JQGg"
+CLIENT_SECRET="xT5zLwh3ly11ok3KPGIlHY5V2gdxpEu7"
+
+token=""
+
+# Funciones =============================
+function auth_zoom() {
+  echo "[+] Autenticando con Zoom API..."
+  response=$(curl -s -X POST https://zoom.us/oauth/token \
+    -u "$CLIENT_ID:$CLIENT_SECRET" \
+    -d "grant_type=account_credentials&account_id=$ACCOUNT_ID")
+
+  token=$(echo $response | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+
+  if [ -n "$token" ]; then
+    echo "[✓] Token obtenido correctamente."
+  else
+    echo "[x] Error autenticando con Zoom API."
+  fi
+}
+
+function create_meeting() {
+  echo "[+] Creando reunión en Zoom..."
+  curl -s -X POST https://api.zoom.us/v2/users/me/meetings \
+    -H "Authorization: Bearer $token" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "topic": "Reunión IA Revolution",
+      "type": 1,
+      "settings": {
+        "join_before_host": true,
+        "approval_type": 0
+      }
+    }' | jq
+}
+
+function list_meetings() {
+  echo "[+] Consultando reuniones..."
+  curl -s -X GET https://api.zoom.us/v2/users/me/meetings \
+    -H "Authorization: Bearer $token" | jq
+}
+
+function help() {
+  echo "\nZoomBot CLI - Comandos disponibles"
+  echo "- auth      → Autenticar con Zoom"
+  echo "- new       → Crear nueva reunión"
+  echo "- list      → Ver reuniones existentes"
+  echo "- help      → Mostrar esta ayuda"
+}
+
+# Lógica principal ======================
+case $1 in
+  auth)
+    auth_zoom
+    ;;
+  new)
+    auth_zoom && create_meeting
+    ;;
+  list)
+    auth_zoom && list_meetings
+    ;;
+  help | *)
+    help
+    ;;
+esac
