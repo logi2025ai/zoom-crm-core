@@ -1,68 +1,14 @@
-#!/bin/bash
+# Credenciales API Zoom
+ZOOM_ACCOUNT_ID=H747iWxbTU24W54HOma5_A
+ZOOM_CLIENT_ID=9RPOGzE7TBCLr_uOH0Whkg
+ZOOM_CLIENT_SECRET=RHhmQCGT9ssTTvxIUlIWeSvPXryHQq4G
 
-# ===========================
-# Zoom CLI - RNAI Core
-# ===========================
+# Seguridad de la app
+ZOOM_SECRET_TOKEN=qxfBMT2iQ7Ww9A551qEb2g
+ZOOM_VERIFICATION_TOKEN=llcX7KLDSK2dgZk4wEHJgA
 
-ACCOUNT_ID="H747iWXbTU24W54HOma5_A"
-CLIENT_ID="oINj9oydR0CDHc2wU1JQGg"
-CLIENT_SECRET="xT5zLwh3ly11ok3KPGIIHY5V2gdxpEu7"
+# Número de teléfono Zoom Phone asignado
+ZOOM_PHONE_NUMBER=+14074940245
 
-get_token() {
-  echo "[🔐] Obteniendo token de acceso..."
-  RESPONSE=$(curl -s --request POST \
-    --url https://zoom.us/oauth/token?grant_type=account_credentials&account_id=$ACCOUNT_ID \
-    --header "Authorization: Basic $(echo -n $CLIENT_ID:$CLIENT_SECRET | base64)")
-
-  ACCESS_TOKEN=$(echo $RESPONSE | grep -o '"access_token":"[^"]*' | cut -d':' -f2 | tr -d '"')
-
-  if [[ -z "$ACCESS_TOKEN" ]]; then
-    echo "[❌] Error obteniendo token."
-  else
-    echo "[✅] Token obtenido correctamente."
-    echo "$ACCESS_TOKEN"
-  fi
-}
-
-create_meeting() {
-  echo "[📞] Creando nueva reunión..."
-  TOKEN=$(get_token)
-
-  curl -s --request POST \
-    --url https://api.zoom.us/v2/users/me/meetings \
-    --header "Authorization: Bearer $TOKEN" \
-    --header "Content-Type: application/json" \
-    --data '{
-      "topic": "Reunión RNAI Bot",
-      "type": 1,
-      "settings": {
-        "host_video": true,
-        "participant_video": true
-      }
-    }' | jq
-}
-
-list_meetings() {
-  echo "[📋] Listando reuniones..."
-  TOKEN=$(get_token)
-
-  curl -s --request GET \
-    --url https://api.zoom.us/v2/users/me/meetings \
-    --header "Authorization: Bearer $TOKEN" | jq
-}
-
-help() {
-  echo "Comandos disponibles Zoom CLI:"
-  echo "  token         → Obtener token de acceso"
-  echo "  new           → Crear una nueva reunión"
-  echo "  list          → Listar reuniones programadas"
-  echo "  help          → Mostrar esta ayuda"
-}
-
-case "$1" in
-  token) get_token ;;
-  new) create_meeting ;;
-  list) list_meetings ;;
-  help|*) help ;;
-esac
-
+# Base URL de la API de Zoom
+ZOOM_BASE_URL=https://api.zoom.us/v2
